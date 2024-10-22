@@ -35,7 +35,7 @@ Set-Location "$dmppath"
 $l1 = & { "`n-------------------"; }
 $l2 = & { "-------------------`n"; }
 $l3 = & { "-------------------" }
-$l4 = & { "`n-------------------`n" }
+# $l4 = & { "`n-------------------`n" }
 $h1 = & { $l1; "|      System     |"; $l2; }
 $h2 = & { $l1; "|    Tampering    |"; $l2; }
 $h3 = & { $l1; "|     Threats     |"; $l2; }
@@ -56,7 +56,7 @@ foreach ($dir in $directories) {
 
 $culture = (Get-Culture).Name
 if ($culture -like 'de*') {
-    $lang = "Dieses Program benötigt 1GB freien Speicherplatz auf deiner System-Festplatte.`n`n`nDie folgenden Programme werden gedownloaded: `n`n- Hayabusa von Yamato Security `n- Hollows Hunter von hasherezade.net `n- Strings2 von Geoff McDonald (mehr Infos auf split-code.com) `n- MFTECmd, PECmd, SBECmd, RECmd, ACCParser, AmCacheParser, SRUMECmd, SQLECmd von Eric Zimmermans Tools (mehr Infos auf ericzimmerman.github.io).`n`nDer Check ist völlig Lokal, keine Daten werden gesammelt.`nFalls Spuren von Cheats gefunden werden, wird dazu geraten den PC zurückzusetzen, ansonsten könnten Konsequenzen auf anderen Servern folgen.`nPC Check Programme auszuführen - dazu gehört auch dieses Script - kann außerhalb von PC Checks zu einem verfälschten Ergebnis führen und ist verboten.`nStimmst du einem PC Check zu und möchtest du die oben genannten Tools Downloaden? (Y/N)"
+    $lang = "Dieses Program benoetigt 1GB freien Speicherplatz auf deiner System-Festplatte.`n`n`nDie folgenden Programme werden gedownloaded: `n`n- Hayabusa von Yamato Security `n- Hollows Hunter von hasherezade.net `n- Strings2 von Geoff McDonald (mehr Infos auf split-code.com) `n- MFTECmd, PECmd, SBECmd, RECmd, ACCParser, AmCacheParser, SRUMECmd, SQLECmd von Eric Zimmermans Tools (mehr Infos auf ericzimmerman.github.io).`n`nDer Check ist völlig Lokal, keine Daten werden gesammelt.`nFalls Spuren von Cheats gefunden werden, wird dazu geraten den PC zurueckzusetzen, ansonsten könnten Konsequenzen auf anderen Servern folgen.`nPC Check Programme auszufuehren - dazu gehoert auch dieses Script - kann außerhalb von PC Checks zu einem verfaelschten Ergebnis fuehren und ist verboten.`nStimmst du einem PC Check zu und moechtest du die oben genannten Tools Downloaden? (Y/N)"
 } elseif ($culture -like 'tr*') {
     $lang = "Bu programı için Sistem Diskinizde 1GB boş disk gerekir.`n`n`nŞu programları indireceğiz`n`n- Yamato Security den Hayabusa`n- Hasherezade.net sitesinden 'Hollows Hunter'`n- Geoff McDonald'den Strings2`n(detayli bilgi için split-code.com)`n- MFTECmd, PECmd, SBECmd, RECmd, ACCParser, AmCacheParser, SRUMECmd, SQLECmd from Eric Zimmermans Tools (detayli bilgi için  ericzimmerman.github.io).`n`nBu tamamen yerel olacak, hiçbir veri toplanmayacak.`nEğer hile izleri bulunursa, bilgisayarınızı sıfırlamanız şiddetle tavsiye edilir, aksi takdirde diğer sunucularda da aynı durumla karşılaşabilirsiniz.`nBu script de dahil olmak üzere PC Kontrol Programlarını PC Kontrolleri haricinde çalıştırmak sonuca etki edebilir.`nPC Kontrolünü kabul ediyor musunuz ve söz konusu araçları programları indirmeyi kabul ediyor musunuz? (Y/N)"
 } else {
@@ -196,6 +196,19 @@ $processStartTimes += Get-Date
 $processes += Start-Process -FilePath "powershell.exe" -ArgumentList "-File 'C:\temp\scripts\Registry.ps1'" -PassThru
 $processStartTimes += Get-Date
 
+$filesToCheck = @(
+    "C:\Temp\Dump\Events\Events.csv",
+    "C:\Temp\Dump\Journal\Raw\Journal.csv",
+    "C:\Temp\Dump\MFT\MFT.csv",
+    "C:\Temp\Dump\Processes\Raw\Explorer.txt"
+)
+
+while ($true) {
+    $missingFiles = $filesToCheck | Where-Object { -not (Test-Path $_) }
+    if (-not $missingFiles) { break }
+    Start-Sleep -Seconds 5
+}
+
 Write-Host "   Importing Dumps"-ForegroundColor yellow
 $AmCacheImp = Import-Csv C:\Temp\Dump\AMCache\AmCache.csv
 $AmCacheUSBImp = Import-Csv C:\Temp\Dump\AMCache\USB.csv
@@ -213,6 +226,15 @@ $eventResults = $EventsImp | Where-Object { $_.RuleTitle -like "*Defender*" -or 
     Select-Object @{Name='Timestamp'; Expression={($_.Timestamp -as [datetime]).ToString("dd/MM/yyyy HH:mm:ss")}}, RuleTitle
 $eventResults | ForEach-Object { "$($_.Timestamp) $($_.RuleTitle)" } | Out-File -FilePath "output.txt" -Encoding UTF8
 $Threats = Get-Content C:\Temp\Dump\Detections.txt
+$usbOutputFile = Get-Content C:\Temp\Dump\USB.txt
+
+if ($MFTImp.Count -eq 0) {
+    Start-Sleep -Seconds 10
+}
+
+Write-Host "Debuggingtest"
+Write-Output $MFTImp.Count
+
 
 Write-Host "   Analyzing System Information"-ForegroundColor yellow
 $o1 = & {
@@ -232,15 +254,12 @@ $o1 = & {
     $CreationDates = $infoText1 + $infoText2 + $infoText3 + $infoText4
     $CreationDates
     $lastClear = Get-PSDrive -PSProvider FileSystem | ForEach-Object { Get-ChildItem -Path (Join-Path -Path $_.Root -ChildPath '$Recycle.Bin') -Force -ErrorAction SilentlyContinue | Sort-Object LastWriteTime -Descending | Select-Object -First 1 | ForEach-Object { [PSCustomObject]@{ LastWriteTime = $_.LastWriteTime; PSDrive = $_.PSDrive.Name } } } | Sort-Object LastWriteTime -Descending | Select-Object -First 1; "Last Recycle Bin Clear: $($lastClear.LastWriteTime.ToString('dd/MM/yyyy HH:mm:ss')) on $($lastClear.PSDrive):\" 
-    "Discord Usernames: $((Get-ChildItem "$env:APPDATA\discord\Local Storage\leveldb" -Filter *.log | ForEach-Object { [regex]::Matches((Get-Content $_.FullName -Raw), '"username":"([^"]+)"') | ForEach-Object { $_.Groups[1].Value } }) -join ', ')"
     if ((Get-Item "C:\Windows\Prefetch\taskkill.exe*").LastWriteTime ) { "Last Taskkill: $((Get-Item "C:\Windows\Prefetch\taskkill.exe*").LastWriteTime)" }
     if ((Get-WinEvent -LogName Security -FilterXPath "*[System[(EventID=1102) and TimeCreated[timediff(@SystemTime) <= 604800000]]]")) { "Possible Event Log Clearing:"; Get-WinEvent -LogName Security -FilterXPath "*[System[(EventID=1102) and TimeCreated[timediff(@SystemTime) <= 604800000]]]" | Select-Object TimeCreated, Message }
     if (Get-ChildItem -Path 'C:\$Recycle.Bin' -Recurse -Force -Filter *.exe | Where-Object { $_.Length -ge $FilesizeL -and $_.Length -le $FilesizeH }) { "Potential Suspicious File found in Recycle Bin - Size Match"}
 }
 $sysUptime = "Time since last Restart: $((New-TimeSpan -Start (Get-CimInstance Win32_OperatingSystem).LastBootUpTime -End (Get-Date)) | ForEach-Object { "$($_.Days) Days, {0:D2}:{1:D2}:{2:D2}" -f $_.Hours, $_.Minutes, $_.Seconds })"
 $sleepTime = "Time since last Sleep: $((New-TimeSpan -Start ((Get-WinEvent -FilterHashtable @{LogName='System'; Id=1; ProviderName='Microsoft-Windows-Power-Troubleshooter'} | Select-Object -First 1).TimeCreated) -End (Get-Date)) | ForEach-Object { "$($_.Days) Days, {0:D2}:{1:D2}:{2:D2}" -f $_.Hours, $_.Minutes, $_.Seconds })"
-
-$usbOutputFile = "C:\Temp\Dump\USB.txt"
 
 $usbPNPDevices = Get-PnpDevice | Where-Object { $_.InstanceId.StartsWith('USBSTOR') }
 $usbPropertiesList = @()
@@ -362,14 +381,14 @@ $mftPaths = $MFTImp | Where-Object { $_.FilePath -like '*:\*' } | Select-Object 
 $journalPaths = $JournalImp | Where-Object { $_.FilePath -like '*:\*' } | Select-Object -ExpandProperty FilePath
 $bamPaths = $BamImp | Where-Object { $_.Program -like '*:\*' } | Select-Object -ExpandProperty Program
 $pcaPaths = Get-Content -Path "C:\Temp\Dump\Processes\Filtered\Pca_AppLauncher.txt", `
-                      "C:\Temp\Dump\Processes\Filtered\Pca_Extended.txt", `
-                      "C:\Temp\Dump\Processes\Filtered\PcaClient.txt" | Where-Object { $_ -match ':\' }
+                               "C:\Temp\Dump\Processes\Filtered\Pca_Extended.txt", `
+                                "C:\Temp\Dump\Processes\Filtered\PcaClient.txt"
 $o2 = $journalPaths | Where-Object { $_ -match "1337|skript|usbdeview|loader_64|abby|ro9an|hitbox|w32|vds|systeminformer|hacker|aimbot|triggerbot" } | Sort-Object -Unique
 $o2 | Set-Content "C:\temp\dump\journal\Keywordsearch.txt"
 $susJournal = if ($o2) { "Suspicious Files found in Journal" }
 
 @($procPaths; $shimPaths; $amcachePaths; $srumPaths; $mftPaths; $bamPaths; $pcaPaths) | Sort-Object -Unique | Add-Content -Path "C:\Temp\Dump\Processes\Paths.txt" -Encoding UTF8
-$paths = Get-Content "C:\Temp\Dump\Processes\Paths.txt" | Where-Object { $_ -match '\.exe$' -and $_ -notmatch '{' -and $_ -match ':\' }
+$paths = Get-Content "C:\Temp\Dump\Processes\Paths.txt" | Where-Object { $_ -match '\.exe$' -and $_ -notmatch '@{' }
 
 $filesizeFound = @()
 $noFilesFound = @()
@@ -419,8 +438,7 @@ $minusSettings = if ($minusResults) {
     $minusResults
 }
 
-$usnTampering = if ($usnjournal.Length -lt 94491) { "`nPotential Manipulation in USNJournal Detected - Filesize: $($usnjournal.Length)" }
-$usnTampering2 = if ($usnjournal.Count -lt 150000) { "`nPotential Manipulation in USNJournal Detected - RowCount: $($usnjournal.Count)" }
+$usnTampering = if ($JournalImp.Length -lt 1000) { "`nPotential Manipulation in USNJournal Detected - Filesize: $($JournalImp.Length)" }
 
 $evtTampering = ("`nEventvwr Registration: $((Get-Item ""$env:APPDATA\Microsoft\MMC\eventvwr"").LastWriteTime)")
 $evtTampering2 = ("`nEventvwr Settings: $((Get-Item ""$env:LOCALAPPDATA\Microsoft\Event Viewer\Settings.Xml"").LastWriteTime)")
@@ -461,7 +479,6 @@ $browserSuspicion = if ($BrowserhistoryImp -or $DownloadsImp -or $FaviconsImp) {
 
 $Tamperings = @(
     $usnTampering
-    $usnTampering2
     $evtTampering
     $evtTampering2
     $evtTampering3
@@ -473,6 +490,9 @@ $Tamperings = @(
     $timeTampering 
     $RTProtectingTampering
 )
+
+Write-Host "Debugging before Filematching"
+Write-Output $MFTImp.Count
 
 Write-Host "   Analyze Filematching on System"-ForegroundColor yellow
 $recentMatches = $mftImp | Where-Object { $_.CreatedTimestamp -ge (Get-Date).AddDays(-7) }
@@ -497,6 +517,7 @@ $MFTdllMatchOutput = foreach ($group in $MFTdllMatch) {
 }
 
 if ($MFTdllMatchOutput.Count -gt 0) {
+    $mftdllmatchings = "`t`tFound " + $($MFTdllMatchOutput.Count) + " Matches of DLL and EXE on Filesystem"
     Write-Host "`t`tFound " -NoNewLine
     Write-Host "$($MFTdllMatchOutput.Count) " -NoNewLine -ForegroundColor Magenta
     Write-Host "Matches of DLL and EXE on Filesystem"
@@ -536,7 +557,7 @@ if ($CheatThreats) {
 }
 
 $Cheats3 = $mftImp | Where-Object { 
-    $_.Filepath -match "usbdeview|ro9an|aimbot|triggerbot|gambohub|abbyace|hitbox|cheat" -or 
+    $_.Filepath -match "usbdeview|ro9an|aimbot|triggerbot|gambohub|abbyace|hitbox" -or 
     $_.Filesize -in $fsSkript, $fsLeet, $fsAstra, $fsHydro, $fsAbby, $fsHitbox, $fsRo9an
 } | Select-Object -ExpandProperty Filepath -Unique
 
@@ -592,6 +613,7 @@ $Cheats2
 $Cheats3
 $Cheats4
 $Cheats5
+$MFTDllMatchings
 Write-Host "`n`n`n`tScript finished" -NoNewline -Foregroundcolor Cyan
 Write-Host " - Do you want to open the Results? (Y / N): " -NoNewline 
 $response = Read-Host
@@ -621,4 +643,10 @@ Remove-MpPreference -ExclusionPath 'C:\Temp'
 # FIX RESULTS!
 # To "usb logs (usb output part)" add "sign.media" from shimcache
 # CHANGE TIMESTAMPS TO EUROPEAN FORMAT AND CHECK FOR UTC!
+# CHECK FOR FILE IF THEY GOT DUMPED
+# Time since last sleep doesnt  work
+# Discord did not work
+# settings.xml did not work
+# usn tampering didnt work (links to old usn)
+# make USN Journal output unique
 & "C:\Temp\Scripts\Menu.ps1"
