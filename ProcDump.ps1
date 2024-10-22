@@ -15,91 +15,128 @@
 
 $ErrorActionPreference = "SilentlyContinue" 
 $dmppath = "C:\Temp\Dump"
-$registryPath = "$dmppath\Registry"
-$rawFolder = "$registryPath\Raw"
-$shimcachepath = "C:\Temp\Dump\Shimcache"
+$procpath = "C:\Temp\Dump\Processes"
+$procpathraw = "C:\Temp\Dump\Processes\Raw"
+$procpathfilt = "C:\Temp\Dump\Processes\Filtered"
 
-# General Registry
-C:\Temp\Dump\RECmd\RECmd.exe -d "C:\windows\system32\config\" --csv C:\temp\dump\registry --details TRUE --bn C:\Temp\Dump\RECmd\batchexamples\kroll_batch.reb
-
-if (-not (Test-Path -Path $rawFolder)) {
-    New-Item -ItemType Directory -Path $rawFolder
+function Get-ProcessID {
+    param(
+        [string]$ServiceName
+    )
+    $processID = (Get-CimInstance -Query "SELECT ProcessId FROM Win32_Service WHERE Name='$ServiceName'").ProcessId
+    return $processID
 }
-
-Get-ChildItem -Path $registryPath -Filter "*.csv" | Move-Item -Destination $rawFolder
-
-$directories = Get-ChildItem -Path $registryPath -Directory | Where-Object { $_.Name -ne "Raw" }
-
-foreach ($directory in $directories) {
-    Get-ChildItem -Path $directory.FullName | Move-Item -Destination $registryPath
+$processList1 = @{
+    "DPS"       = Get-ProcessID -ServiceName "DPS"
+    "DiagTrack" = Get-ProcessID -ServiceName "DiagTrack"
+    "PcaSvc"   = Get-ProcessID -ServiceName "PcaSvc"
+    "explorer" = (Get-Process explorer).Id
 }
-
-foreach ($directory in $directories) {
-    Remove-Item -Path $directory.FullName -Recurse
+$processList2 = @{
+    "dusmsvc"  = Get-ProcessID -ServiceName "Dnscache"
+    "eventlog" = Get-ProcessID -ServiceName "Eventlog"
+    "WSearch"   = Get-ProcessID -ServiceName "WSearch"
+    "dwm"      = (Get-Process dwm).Id
+    "sysmain"  = Get-ProcessID -ServiceName "Sysmain"
+    "dnscache" = Get-ProcessID -ServiceName "Dnscache"
+    "lsass"    = (Get-Process lsass).Id
 }
+$processList = $processList1 + $processList2
 
-$regRenames = Get-ChildItem -Path "$dmppath\Registry" -Filter "*.csv" -Recurse
-foreach ($file in $regRenames) {
-    $newName = $file.Name -replace '^\d+_', ''
-    if ($file.Name -ne $newName) {
-        Rename-Item -Path $file.FullName -NewName $newName
+$uptime = foreach ($entry in $processList.GetEnumerator()) {
+    $service = $entry.Key
+    $pidVal = $entry.Value
+
+    if ($pidVal -eq 0) {
+        [PSCustomObject]@{ Service = $service; Uptime = 'Stopped' }
+    }
+    elseif ($null -ne $pidVal) {
+        $process = Get-Process -Id $pidVal -ErrorAction SilentlyContinue
+        if ($process) {
+            $uptime = (Get-Date) - $process.StartTime
+            $uptimeFormatted = '{0} days, {1:D2}:{2:D2}:{3:D2}' -f $uptime.Days, $uptime.Hours, $uptime.Minutes, $uptime.Seconds
+            [PSCustomObject]@{ Service = $service; Uptime = $uptimeFormatted }
+        }
+        else {
+            [PSCustomObject]@{ Service = $service; Uptime = 'Stopped' }
+        }
+    }
+    else {
+        [PSCustomObject]@{ Service = $service; Uptime = 'Stopped' }
     }
 }
 
-$keywords = @('AppPaths', 'DeviceClasses', 'KnownNetworks', 'NetworkAdapters', 'NetworkSetup', 'Products', 'Profilelist', 'SAMBuiltin', 'SCSI', 'UserAccounts')
-Get-ChildItem -Path $registryPath -File | Where-Object { 
-    $fileName = $_.Name
-    $keywords | ForEach-Object { 
-        if ($fileName -like "*$_*") { return $true }
+$sUptime = $uptime | Sort-Object Service | Format-Table -AutoSize -HideTableHeaders | Out-String
+
+foreach ($entry in $processList1.GetEnumerator()) {
+    $service = $entry.Key
+    $pidVal = $entry.Value
+    if ($null -ne $pidVal) {
+        & "$dmppath\strings2.exe" -a -l 5 -pid $pidVal | Select-String -Pattern "\.exe|\.bat|\.ps1|\.rar|\.zip|\.7z|\.dll" | Set-Content -Path "$procpathraw\$service.txt" -Encoding UTF8
     }
-} | Remove-Item
+}
 
-Import-Csv "$registryPath\Uninstall_SOFTWARE.csv" | 
-    Select-Object Timestamp, KeyName, DisplayName, Publisher, InstallDate, InstallSource, InstallLocation | 
-    Export-Csv "$registryPath\Uninstall.csv" -NoTypeInformation
+# Sorting and Filtering
+Set-Location "$procpathraw"
+$dll = Get-Content explorer.txt | Where-Object { $_ -match "^[A-Za-z]:\\.*\.dll$" }
+$dll | Sort-Object -Unique -Descending | Out-File "$procpath\DLL.txt"
 
-Import-Csv "$registryPath\USB_System.csv" | 
-    Select-Object Timestamp, DeviceName, SerialNumber, KeyName, Service | 
-    Export-Csv "$registryPath\USB_System.csv" -NoTypeInformation
+$DPSString = "$Astra|$Hydro|$Leet|$Skript"
+$dps1 = (Get-Content dps.txt | Where-Object { $_ -match '\.exe' -and $_ -match '!0!' } | Sort-Object) -join "`n"
+$predps2 = Get-Content dps.txt | Where-Object { $_ -match '!!.*2024' } | Sort-Object
+$dps2grouped = ($predps2 | ForEach-Object { $_ -replace '!!(.+?)!.*', '$1' } | Group-Object | Where-Object { $_.Count -gt 1 } | ForEach-Object { $_.Group } | Select-Object -Unique)
+$dps2 = $predps2 | Where-Object { $_ -match ('!!' + ($dps2grouped -join '|') + '!') }
+$dps2 = $dps2 -join "`n"
+$dps3 = (Get-Content dps.txt | Where-Object { $_ -match '!!.*2024' } | Sort-Object) -join "`n"
+$dps4 = (Get-Content dps.txt | Where-Object { $_ -match '!!' -and $_ -match 'exe' } | Sort-Object -Unique) -join "`n"
+$dps4 | Where-Object { $_ -match $DPSString } | Add-Content -Path "DPS_Cheat.txt"
+$dps = "DPS Null`n$dps1`n`nDPS Doubles`n$dps2`n`nDPS Dates`n$dps3`n`nDPS Executables`n$dps4"
+$dps | Out-File "$procpath\DPS_Filtered.txt"
 
-Import-Csv "$registryPath\BamDam_System.csv" | 
-    Select-Object ExecutionTime, Program | 
-    Export-Csv "$registryPath\BamDam.csv" -NoTypeInformation
+$fileSlash = Get-Content explorer.txt | Where-Object { $_ -match "file:///" } | ForEach-Object { $_ -replace "file:///", "" }
+$fileSlash | Out-File "$procpath\Files_Visited.txt"
 
-Import-Csv "$registryPath\RADAR_SOFTWARE.csv" | 
-    Select-Object LastDetectionTime, Filename | 
-    Export-Csv "$registryPath\RADAR.csv" -NoTypeInformation
+$hdv = Get-Content explorer.txt, diagtrack.txt | Where-Object { $_ -match "HarddiskVolume" } | ForEach-Object { if ($_ -match "HarddiskVolume(\d+)") { [PSCustomObject]@{ Line = $_; Number = $matches[1] } } } | Group-Object Number | Sort-Object Count | ForEach-Object { $_.Group.Line } | Select-Object -Unique
+$hdv | Out-File "$procpath\Harddiskvolumes.txt"
 
-Import-Csv "$registryPath\MountedDevices_System.csv" | 
-    Select-Object DeviceName, DeviceData | 
-    Export-Csv "$registryPath\MountedDevices.csv" -NoTypeInformation
+$invis = Get-Content explorer.txt | Where-Object { $_ -match "[A-Z]:\\.*[^\x00-\x7F].*\.exe" }
+$invis | Out-File "$procpath\Invisible_Chars.txt"
 
-Import-Csv "$registryPath\FirewallRules_SYSTEM.csv" | 
-    Select-Object App, Dir, Active, Action | 
-    Export-Csv "$registryPath\FirewallRules.csv" -NoTypeInformation
+$modext1 = Get-Content dps.txt | Where-Object { $_ -match "^!![A-Z]((?!Exe).)*$" }
+$modext2 = Get-Content diagtrack.txt | Where-Object { $_ -match "^\\device\\harddiskvolume((?!Exe|dll).)*$" }
+$modext = "Possible Modification of Extensions in DPS$l4$modext1 `nPossible Modification of Extensions in Diagtrack$l4$modext2"
+$modext | Out-File "$procpath\Modified_Extensions.txt"
 
-Import-Csv "$registryPath\ETW_SYSTEM.csv" | 
-    Select-Object LastWriteTimestamp, Provider, GUID | 
-    Export-Csv "$registryPath\ETW.csv" -NoTypeInformation
+$pca1 = Get-Content explorer.txt | Where-Object { $_ -match "pcaclient" } | ForEach-Object { if ($_ -match "[A-Z]:\\.*?\.exe") { $matches[0] } }
+$pca1 | Sort-Object -Unique -Descending | Out-File "$procpath\PcaClient.txt"
 
-# Shimcache
-C:\temp\dump\AppCompatCacheParser.exe -t --csv C:\temp\dump\shimcache --csvf Shimcache.csv
-$shimtemp = "$shimcachepath\Shimcache_temp.csv"
-Import-Csv "$shimcachepath\Shimcache.csv" | Where-Object { -not ($_.Path -match '^[0-9]') } | Select-Object LastModifiedTimeUTC, Path, Executed | Sort-Object Path -Descending -Unique | Export-Csv $shimtemp -NoTypeInformation
-Move-Item -Path $shimtemp -Destination "$shimcachepath\Shimcache.csv" -Force
+$pca2 = Get-Content pcasvc.txt | Where-Object { $_ -match "TRACE," }
+$pca2 | Sort-Object -Unique -Descending | Out-File "$procpathraw\Pca_Extended_Raw.txt"
+$pca3 = $pca2 | ForEach-Object { if ($_ -match "[A-Z]:\\.*?\.exe") { $matches[0] } }
+$pca3 | Sort-Object -Unique -Descending | Out-File "$procpath\Pca_Extended.txt"
 
-# Shellbags
-C:\Temp\Dump\SBECmd.exe -d "$env:LocalAppData\Microsoft\Windows" --csv C:\temp\dump\Shellbags | Out-Null
-$userclasstemp = Get-Item "C:\temp\dump\shellbags\*usrclass.csv"
-$shellbagsRaw = Import-Csv $userclasstemp.FullName
-$shellbagsDrive = ($shellbagsRaw | Where-Object { $_.ShellType -like "*Drive*" } | Select-Object -Unique ShellType, Value | ForEach-Object { "$($_.ShellType): $($_.Value)" }) -join "`r`n"
-$shellbagsDir = ($shellbagsRaw | Where-Object { $_.ShellType -eq "Directory" } | Select-Object -Unique AbsolutePath | ForEach-Object { "$($_.AbsolutePath)" }) -join "`r`n"
-$driveResults = "Drives found in Shellbags`n-------------------------`n$shellbagsDrive"
-$dirResults = "Directories found in Shellbags`n------------------------------`n$shellbagsDir"
-$driveResults + "`r`n`r`n" + $dirResults | Out-File "C:\temp\dump\shellbags\Shellbags_Result.txt"
-$userclasstemp = Get-Item "C:\temp\dump\shellbags\*usrclass.csv"
-$shellbagImport = Import-Csv $userclasstemp.FullName
-$shellbagImport | Select-Object LastWriteTime, AbsolutePath, CreatedOn, ModifiedOn, AccessedOn | Sort-Object LastWriteTime -Descending | Export-Csv "C:\temp\dump\shellbags\Shellbags.csv" -NoTypeInformation
-Remove-Item "C:\temp\dump\shellbags\*usrclass.csv" -Force
-Get-ChildItem "C:\temp\dump\Shellbags\*SBECmd*" | Remove-Item
-Get-ChildItem "C:\Temp\Dump\Registry" | Where-Object { $_.Name -like "*_*" } | Remove-Item -Force
+$proccomp2 = Get-Content explorer.txt, pcasvc.txt, diagtrack.txt | Where-Object { $_ -match "^[a-zA-Z0-9_-]+\.(rar|zip|7z)$" }
+$proccomp2 | Out-File "$procpath\Compressed_Processes.txt"
+
+$procexes = Get-Content explorer.txt | Where-Object { $_ -match "^\b(?!C:)[A-Z]:\\.*" }
+$procexes | Sort-Object -Unique -Descending | Out-File "$procpath\Drive_Executables.txt"
+
+$procscripts = Get-Content explorer.txt | Where-Object { $_ -match "^[a-zA-Z0-9_-]+\.(bat|ps1)$" }
+$procscripts | Sort-Object -Unique -Descending | Out-File "$procpath\Scripts.txt"
+
+$tempComp = Get-Content explorer.txt | Where-Object { $_ -match "Local\\Temp.*\.exe" }
+$tempComp | Sort-Object -Unique -Descending | Out-File "$procpath\Compressed_Temp.txt"
+
+if (Test-Path "C:\windows\appcompat\pca\PcaAppLaunchDic.txt") { Copy-Item "C:\windows\appcompat\pca\PcaAppLaunchDic.txt" -Destination "C:\temp\dump\processes\raw" }
+$pca4 = (Get-Content "C:\temp\dump\processes\raw\PcaAppLaunchDic.txt" | ForEach-Object { ($_ -replace '\|.*') } | Where-Object { $_ -match '^[A-Za-z]:\\' })
+$pca4 | Out-File "$procpath\Pca_AppLauncher.txt"
+
+$sUptime | Out-File C:\temp\dump\processes\Uptime.txt
+
+Move-Item -Path "$procpath\*.txt" -Destination "$procpathfilt"
+
+# Hook Loaded DLLs
+C:\temp\dump\hollows_hunter.exe /pname "Explorer.exe;GTA5.exe;AMDRSServ.exe;nvcontainer.exe;obs64.exe;Medal.exe;MedalEncoder.exe" /hooks /quiet /json /jlvl 2 | out-file c:\temp\dump\processes\hooks.json
+Get-Content "c:\temp\dump\processes\hooks.json" | Out-File "c:\temp\dump\processes\Hooks.txt"
+Remove-Item "c:\temp\dump\processes\hooks.json"
+Remove-Item "c:\temp\dump\processes\raw\hollows_hunter.dumps" -Recurse
