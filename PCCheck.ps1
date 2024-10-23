@@ -11,7 +11,7 @@
 # It is advised not to use this on your own.
 #
 # Version 2.0BETA
-# 21 - October - 2024
+# 24 - October - 2024
 
 $ErrorActionPreference = "SilentlyContinue" 
 $configJson = Invoke-RestMethod -Uri "https://raw.githubusercontent.com/dot-sys/cfg/master/cfg.json" 
@@ -638,15 +638,4 @@ Clear-Host
 Remove-Item -Path "C:\Temp\Dump\config", "C:\Temp\Dump\logs", "C:\Temp\Dump\rules", "C:\Temp\Dump\RECmd" -Recurse -Force -ErrorAction SilentlyContinue
 Remove-Item -Path "C:\Temp\Dump\*.exe", "C:\Temp\Dump\*.zip" -Force -ErrorAction SilentlyContinue
 Remove-MpPreference -ExclusionPath 'C:\Temp'
-# ADD DETECTION FOR SAME .exe and .dll name in certain filerange!
-# ADD ADS DETECTION!
-# FIX RESULTS!
-# To "usb logs (usb output part)" add "sign.media" from shimcache
-# CHANGE TIMESTAMPS TO EUROPEAN FORMAT AND CHECK FOR UTC!
-# CHECK FOR FILE IF THEY GOT DUMPED
-# Time since last sleep doesnt  work
-# Discord did not work
-# settings.xml did not work
-# usn tampering didnt work (links to old usn)
-# make USN Journal output unique
 & "C:\Temp\Scripts\Menu.ps1"
