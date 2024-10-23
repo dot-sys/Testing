@@ -95,7 +95,6 @@ do {
                         Invoke-WebRequest -Uri "https://raw.githubusercontent.com/dot-sys/Recording-Check/master/Recording-VPN-Check.ps1" -OutFile "C:\Temp\Scripts\Record-VPN-Check.ps1"
                         Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass -Force
                         Set-ExecutionPolicy -Scope LocalMachine -ExecutionPolicy RemoteSigned -Force
-                        Add-MpPreference -ExclusionPath 'C:\Temp\Dump' | Out-Null
                         & C:\temp\scripts\Record-VPN-Check.ps1
                         exit
                     }
