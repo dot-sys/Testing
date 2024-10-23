@@ -11,10 +11,12 @@
 # It is advised not to use this on your own.
 #
 # Version 2.0BETA
-# 21 - October - 2024
+# 24 - October - 2024
+
 $ErrorActionPreference = "SilentlyContinue"
 $MFTPath = "C:\temp\dump\MFT"
 Set-Location "$MFTPath"
+
 $mftDrives = Get-WmiObject Win32_LogicalDisk | Select-Object -ExpandProperty DeviceID | ForEach-Object { $_.Substring(0, 1) }
 foreach ($mftDriveLetter in $mftDrives) {
     & "C:\temp\dump\mftecmd.exe" -f "${mftDriveLetter}:\`$Extend\`$UsnJrnl:`$J" -m "${mftDriveLetter}:\`$MFT" --fl --csv "C:\Temp\Dump\MFT"
@@ -80,21 +82,7 @@ Get-ChildItem -Path $mftSourcePath -File | Where-Object {
     $mftInputFile = $_.FullName
     $mftOutputFile = Join-Path -Path $mftSourcePath -ChildPath "$($_.BaseName)_filtered.csv"
     
-    Import-Csv -Path $mftInputFile | Where-Object { $_.Extension -match '\.(exe|rar|zip|7z|bat|ps1|identifier|rpf|dll# Checking Script
-# For safe and local quick-dumping of System logs and files
-#
-# Author:
-# Created by dot-sys under GPL-3.0 license
-# This script is not related to any external Project.
-#
-# Usage:
-# Use with Powershell 5.1 and NET 4.0 or higher.
-# Running PC Checking Programs, including this script, outside of PC Checks may have impact on the outcome.
-# It is advised not to use this on your own.
-#
-# Version 2.0BETA
-# 21 - October - 2024
-)$' } | Export-Csv -Path $mftOutputFile -NoTypeInformation
+    Import-Csv -Path $mftInputFile | Where-Object { $_.Extension -match '\.(exe|rar|zip|7z|bat|ps1|identifier|rpf|dll)$' } | Export-Csv -Path $mftOutputFile -NoTypeInformation
 }
     
 $mftSourcePath = "$MFTPath\Raw"
@@ -139,6 +127,7 @@ $mftOutputData | Export-Csv -Path "$MFTPath\Journal.csv" -NoTypeInformation
     
 Write-Host "   Sorting USN Journal"-ForegroundColor yellow
 Set-Location "$MFTPath"
+
 Import-Csv "Journal.csv" | ForEach-Object {
     $FilePath = if ($_.ParentPath) {
         "$($_.Drive):$($_.ParentPath.TrimStart('.'))\$($_.Name)"
