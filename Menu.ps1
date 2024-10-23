@@ -84,7 +84,6 @@ do {
                         Invoke-WebRequest -Uri "https://raw.githubusercontent.com/dot-sys/Testing/master/Localhost.ps1" -OutFile "C:\Temp\Scripts\Localhost.ps1"
                         Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass -Force
                         Set-ExecutionPolicy -Scope LocalMachine -ExecutionPolicy RemoteSigned -Force
-                        Add-MpPreference -ExclusionPath 'C:\Temp\Dump' | Out-Null
                         & C:\temp\scripts\PCCheck.ps1
                         exit
                     }
