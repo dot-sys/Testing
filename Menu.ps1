@@ -11,7 +11,7 @@
 # It is advised not to use this on your own.
 #
 # Version 2.0BETA
-# 21 - October - 2024
+# 24 - October - 2024
 
 $ErrorActionPreference = "SilentlyContinue" 
 function Show-MainMenu {
@@ -26,6 +26,7 @@ function Show-ChecksMenu {
     return Read-Host "`n`n`nChecks Menu:`n
     (1)`tFull Check`n
     (2)`tRecording Check`n
+    (3)`tAdvanced Filechecking (BETA)`n
     (0)`tBack to Main Menu`n`nChoose"
 }
 
@@ -44,8 +45,8 @@ function CleanTraces {
     Write-Host "`n`nCleaning traces of the Check..." -ForegroundColor yellow
     Write-Host "`rDoes not include installed programs" -ForegroundColor yellow
     Start-Sleep 3
-    Remove-Item -Path "C:\Temp\Dump" -Recurse -Force | Out-Null
-    Remove-Item -Path "C:\Temp\Scripts" -Recurse -Force | Out-Null
+    Get-ChildItem -Path "C:\Temp\Dump" | Remove-Item -Recurse -Force | Out-Null
+    Get-ChildItem -Path "C:\Temp\Scripts" -File | Where-Object { $_.Name -ne "Menu.ps1" } | ForEach-Object { Remove-Item -Path $_.FullName -Recurse -Force } | Out-Null
     Write-Host "Traces cleaned successfully." -ForegroundColor green
     Write-Host "`n`n`tReturning to Menu in " -NoNewline 
     Write-Host "5 " -NoNewLine -ForegroundColor Magenta
@@ -85,7 +86,7 @@ do {
                         Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass -Force
                         Set-ExecutionPolicy -Scope LocalMachine -ExecutionPolicy RemoteSigned -Force
                         & C:\temp\scripts\PCCheck.ps1
-                        exit
+                        return
                     }
                     2 {
                         Write-Host "`n`nPerforming Recording Check..." -ForegroundColor yellow
@@ -95,8 +96,18 @@ do {
                         Invoke-WebRequest -Uri "https://raw.githubusercontent.com/dot-sys/Recording-Check/master/Recording-VPN-Check.ps1" -OutFile "C:\Temp\Scripts\Record-VPN-Check.ps1"
                         Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass -Force
                         Set-ExecutionPolicy -Scope LocalMachine -ExecutionPolicy RemoteSigned -Force
+                        Add-MpPreference -ExclusionPath 'C:\Temp\Dump' | Out-Null
                         & C:\temp\scripts\Record-VPN-Check.ps1
                         exit
+                    }
+                    3 {
+                        Write-Host "`n`nPerforming Advanced Filechecking (BETA)..." -ForegroundColor yellow
+                        New-Item -Path "C:\Temp\Scripts" -ItemType Directory -Force | Out-Null
+                        Set-Location "C:\temp"
+                        Invoke-WebRequest -Uri "https://raw.githubusercontent.com/dot-sys/PC-Check/master/Packers.ps1" -OutFile "C:\Temp\Scripts\Packers.ps1"
+                        Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass -Force
+                        & C:\Temp\Scripts\Packers.ps1
+                        return
                     }
                     0 { break }
                     default {
