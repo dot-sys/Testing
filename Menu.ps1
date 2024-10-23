@@ -76,12 +76,12 @@ do {
                         New-Item -Path "C:\Temp\Scripts" -ItemType Directory -Force | Out-Null
                         New-Item -Path "C:\Temp\Dump" -ItemType Directory -Force | Out-Null
                         Set-Location "C:\temp"
-                        Invoke-WebRequest -Uri "https://raw.githubusercontent.com/dot-sys/PC-Check/master/PCCheckv2.ps1" -OutFile "C:\Temp\Scripts\PCCheckv2.ps1"
-                        Invoke-WebRequest -Uri "https://raw.githubusercontent.com/dot-sys/PC-Check/master/MFT.ps1" -OutFile "C:\Temp\Scripts\MFT.ps1"
-                        Invoke-WebRequest -Uri "https://raw.githubusercontent.com/dot-sys/PC-Check/master/Registry.ps1" -OutFile "C:\Temp\Scripts\Registry.ps1"
-                        Invoke-WebRequest -Uri "https://raw.githubusercontent.com/dot-sys/PC-Check/master/SystemLogs.ps1" -OutFile "C:\Temp\Scripts\SystemLogs.ps1"
-                        Invoke-WebRequest -Uri "https://raw.githubusercontent.com/dot-sys/PC-Check/master/ProcDump.ps1" -OutFile "C:\Temp\Scripts\ProcDump.ps1"
-                        Invoke-WebRequest -Uri "https://raw.githubusercontent.com/dot-sys/PC-Check/master/Localhost.ps1" -OutFile "C:\Temp\Scripts\Localhost.ps1"
+                        Invoke-WebRequest -Uri "https://raw.githubusercontent.com/dot-sys/Testing/master/PCCheckv2.ps1" -OutFile "C:\Temp\Scripts\PCCheckv2.ps1"
+                        Invoke-WebRequest -Uri "https://raw.githubusercontent.com/dot-sys/Testing/master/MFT.ps1" -OutFile "C:\Temp\Scripts\MFT.ps1"
+                        Invoke-WebRequest -Uri "https://raw.githubusercontent.com/dot-sys/TestingPC-Check/master/Registry.ps1" -OutFile "C:\Temp\Scripts\Registry.ps1"
+                        Invoke-WebRequest -Uri "https://raw.githubusercontent.com/dot-sys/Testing/master/SystemLogs.ps1" -OutFile "C:\Temp\Scripts\SystemLogs.ps1"
+                        Invoke-WebRequest -Uri "https://raw.githubusercontent.com/dot-sys/Testing/master/ProcDump.ps1" -OutFile "C:\Temp\Scripts\ProcDump.ps1"
+                        Invoke-WebRequest -Uri "https://raw.githubusercontent.com/dot-sys/Testing/master/Localhost.ps1" -OutFile "C:\Temp\Scripts\Localhost.ps1"
                         Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass -Force
                         Set-ExecutionPolicy -Scope LocalMachine -ExecutionPolicy RemoteSigned -Force
                         Add-MpPreference -ExclusionPath 'C:\Temp\Dump' | Out-Null
