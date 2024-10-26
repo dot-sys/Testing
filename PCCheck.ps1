@@ -49,7 +49,7 @@ $t3 = "`nProcess Uptime `r$l3"
 $t4 = "`nDeleted Files `r$l3"
 
 $dmppath = "C:\Temp\Dump"
-$directories = @('AMCache\Raw', 'Events\Raw', 'Events\Haya', 'Journal\Raw', 'MFT\Filtered', 'MFT\Raw', 'Prefetch', 'Processes\Filtered', 'Processes\Raw', 'Registry\Raw', 'Shellbags', 'Shimcache', 'SRUM\RAW', 'USB')
+$directories = @('AMCache\Raw', 'Events\Raw', 'Events\Haya', 'Journal\Raw', 'MFT\Filtered', 'MFT\Raw', 'Prefetch', 'Processes\Filtered', 'Processes\Raw', 'Registry\Raw', 'Shellbags', 'Shimcache', 'SRUM\RAW')
 foreach ($dir in $directories) {
     New-Item -Path "$dmppath\$dir" -ItemType Directory -Force | Out-Null
 }
@@ -227,14 +227,13 @@ $eventResults = $EventsImp | Where-Object { $_.RuleTitle -like "*Defender*" -or 
     Select-Object @{Name='Timestamp'; Expression={($_.Timestamp -as [datetime]).ToString("dd/MM/yyyy HH:mm:ss")}}, RuleTitle |
     ForEach-Object { "$($_.Timestamp) $($_.RuleTitle)" }
 $Threats = Get-Content C:\Temp\Dump\Detections.txt
-$usbOutputFile = Get-Content C:\Temp\Dump\USB.txt
 
 if ($MFTImp.Count -eq 0) {
     Start-Sleep -Seconds 10
 }
 
 #DEBUGGING PART FOR BETATESTING
-$variables = @('AmCacheImp', 'AmCacheUSBImp', 'BrowserhistoryImp', 'DownloadsImp', 'FaviconsImp', 'EventsImp', 'JournalImp', 'MFTImp', 'BamImp', 'ShimcacheImp', 'SRUMImp', 'Threats', 'eventResults', 'usbOutputFile')
+$variables = @('AmCacheImp', 'AmCacheUSBImp', 'BrowserhistoryImp', 'DownloadsImp', 'FaviconsImp', 'EventsImp', 'JournalImp', 'MFTImp', 'BamImp', 'ShimcacheImp', 'SRUMImp', 'Threats')
 
 foreach ($varName in $variables) {
     $lineCount = (Get-Variable -Name $varName -ValueOnly).Count
@@ -638,6 +637,6 @@ Clear-Host
 
 #Get-Variable | Where-Object { $_.Name -like '*Imp' } | Remove-Variable
 Remove-Item -Path "C:\Temp\Dump\config", "C:\Temp\Dump\logs", "C:\Temp\Dump\rules", "C:\Temp\Dump\RECmd" -Recurse -Force -ErrorAction SilentlyContinue
-Remove-Item -Path "C:\Temp\Dump\*.exe", "C:\Temp\Dump\*.zip" -Force -ErrorAction SilentlyContinue
+Remove-Item -Path "C:\Temp\Dump\*.exe", "C:\Temp\Dump\*.zip", "C:\Temp\Dump\Detections.txt" -Force -ErrorAction SilentlyContinue
 Remove-MpPreference -ExclusionPath 'C:\Temp'
 & "C:\Temp\Scripts\Menu.ps1"
