@@ -11,7 +11,7 @@
 # It is advised not to use this on your own.
 #
 # Version 2.0BETA
-# 24 - October - 2024
+# 21 - October - 2024
 
 $ErrorActionPreference = "SilentlyContinue" 
 $configJson = Invoke-RestMethod -Uri "https://raw.githubusercontent.com/dot-sys/cfg/master/cfg.json" 
@@ -126,7 +126,7 @@ else {
     Write-Host "Seconds`n`n`n" -NoNewline
     Start-Sleep 5
     & C:\temp\scripts\Menu.ps1
-    exit
+    return
 }
 
 Clear-Host
