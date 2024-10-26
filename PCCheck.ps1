@@ -222,6 +222,7 @@ $MFTImp = Import-Csv C:\Temp\Dump\MFT\MFT.csv
 $BamImp = Import-Csv C:\Temp\Dump\Registry\Bam.csv
 $ShimcacheImp = Import-Csv C:\Temp\Dump\Shimcache\Shimcache.csv
 $SRUMImp = Import-Csv C:\Temp\Dump\SRUM\SRUM.csv
+$Threats = Get-Content C:\Temp\Dump\Detections.txt
 $eventResults = $EventsImp | Where-Object { $_.RuleTitle -like "*Defender*" -or $_.Level -eq "crit" -or $_.Level -eq "high" } | 
     Select-Object @{Name='Timestamp'; Expression={($_.Timestamp -as [datetime]).ToString("dd/MM/yyyy HH:mm:ss")}}, RuleTitle |
     ForEach-Object { "$($_.Timestamp) $($_.RuleTitle)" }
@@ -232,9 +233,13 @@ if ($MFTImp.Count -eq 0) {
     Start-Sleep -Seconds 10
 }
 
-Write-Host "Debuggingtest"
-Write-Output $MFTImp.Count
+#DEBUGGING PART FOR BETATESTING
+$variables = @('AmCacheImp', 'AmCacheUSBImp', 'BrowserhistoryImp', 'DownloadsImp', 'FaviconsImp', 'EventsImp', 'JournalImp', 'MFTImp', 'BamImp', 'ShimcacheImp', 'SRUMImp', 'Threats', 'eventResults', 'usbOutputFile')
 
+foreach ($varName in $variables) {
+    $lineCount = (Get-Variable -Name $varName -ValueOnly).Count
+    Write-Output "DEBUG: $varName $lineCount"
+}
 
 Write-Host "   Analyzing System Information"-ForegroundColor yellow
 $o1 = & {
@@ -371,9 +376,6 @@ if ($AMCacheUSBImp) {
     Add-Content -Path $usbOutputFile -Value $hiddenFilesOutput
 }
 
-Write-Host "   Analyzing Threat-Logs"-ForegroundColor yellow
-
-
 Write-Host "   Sorting and Filtering Evidences"-ForegroundColor yellow
 $procPaths = Get-Content "C:\Temp\Dump\Processes\Raw\explorer.txt", "C:\Temp\Dump\Processes\Raw\pcasvc.txt" | Where-Object { $_ -match "^[A-Za-z]:\\.+\.exe$" }
 $shimPaths = $ShimcacheImp | Where-Object { $_.Path -match '^[A-Za-z]:\\.*\.exe$' } | Select-Object Path
@@ -493,9 +495,6 @@ $Tamperings = @(
     $timeTampering 
     $RTProtectingTampering
 )
-
-Write-Host "Debugging before Filematching"
-Write-Output $MFTImp.Count
 
 Write-Host "   Analyze Filematching on System"-ForegroundColor yellow
 $recentMatches = $mftImp | Where-Object { $_.CreatedTimestamp -ge (Get-Date).AddDays(-7) }
