@@ -1,5 +1,5 @@
 # Checking Script
-# For safe and local quick-dumping of System logs and files
+# For safe and local quick-dumping of System logs and Files
 #
 # Author:
 # Created by dot-sys under GPL-3.0 license
@@ -10,8 +10,8 @@
 # Running PC Checking Programs, including this script, outside of PC Checks may have impact on the outcome.
 # It is advised not to use this on your own.
 #
-# Version 2.0BETA
-# 21 - October - 2024
+# Version 2.0 OPENBETA
+# 26 - October - 2024
 
 $ErrorActionPreference = "SilentlyContinue" 
 $configJson = Invoke-RestMethod -Uri "https://raw.githubusercontent.com/dot-sys/cfg/master/cfg.json" 
@@ -218,13 +218,12 @@ $FaviconsImp = Import-Csv C:\Temp\Dump\BrowserHistory\Favicons.csv
 $EventsImp = Import-Csv C:\Temp\Dump\Events\Events.csv
 $JournalImp = Import-Csv C:\Temp\Dump\Journal\Raw\Journal.csv
 $MFTImp = Import-Csv C:\Temp\Dump\MFT\MFT.csv
-# $PrefetchImp = Import-Csv C:\Temp\Dump\Prefetch\Prefetch.csv
 $BamImp = Import-Csv C:\Temp\Dump\Registry\Bam.csv
 $ShimcacheImp = Import-Csv C:\Temp\Dump\Shimcache\Shimcache.csv
 $SRUMImp = Import-Csv C:\Temp\Dump\SRUM\SRUM.csv
 $eventResults = $EventsImp | Where-Object { $_.RuleTitle -like "*Defender*" -or $_.Level -eq "crit" -or $_.Level -eq "high" } | 
-    Select-Object @{Name='Timestamp'; Expression={($_.Timestamp -as [datetime]).ToString("dd/MM/yyyy HH:mm:ss")}}, RuleTitle
-$eventResults | ForEach-Object { "$($_.Timestamp) $($_.RuleTitle)" } | Out-File -FilePath "output.txt" -Encoding UTF8
+    Select-Object @{Name='Timestamp'; Expression={($_.Timestamp -as [datetime]).ToString("dd/MM/yyyy HH:mm:ss")}}, RuleTitle |
+    ForEach-Object { "$($_.Timestamp) $($_.RuleTitle)" }
 $Threats = Get-Content C:\Temp\Dump\Detections.txt
 $usbOutputFile = Get-Content C:\Temp\Dump\USB.txt
 
@@ -240,6 +239,8 @@ Write-Host "   Analyzing System Information"-ForegroundColor yellow
 $o1 = & {
     $scripttime
     "Connected Drives: $(Get-WmiObject Win32_LogicalDisk | Where-Object {$_.DriveType -eq 3 -or $_.DriveType -eq 2} | ForEach-Object { "$($_.DeviceID)\" })" -join ', '
+    $fatDrives = (Get-WmiObject Win32_LogicalDisk | Where-Object {($_.FileSystem -eq 'FAT32' -or $_.FileSystem -eq 'exFAT') -and ($_.DriveType -eq 3 -or $_.DriveType -eq 2)} | ForEach-Object { "$($_.DeviceID)\" }) -join ', '
+    if ($fatDrives) { "FAT Drive detected: $fatDrives" }
     "Volumes in Registry: $(if ($regvolumes = Get-ChildItem -Path 'HKLM:\SOFTWARE\Microsoft\Windows Search\VolumeInfoCache' | ForEach-Object { $_ -replace '^.*\\([^\\]+)$', '$1' }) { $regvolumes -join ', ' } else { 'Registry Volume Cache Manipulated' })"
     "Windows Version: $((Get-WmiObject -Class Win32_OperatingSystem).Caption), Build: $((Get-WmiObject -Class Win32_OperatingSystem).BuildNumber)"
     $windowsInstallDate = [Management.ManagementDateTimeConverter]::ToDateTime((Get-WmiObject Win32_OperatingSystem).InstallDate).ToString('dd/MM/yyyy')
@@ -250,7 +251,7 @@ $o1 = & {
     $EventlogCreationDate = (Get-Item "C:\Windows\System32\winevt\Logs\Microsoft-Windows-Windows Defender%4Operational.evtx").CreationTime.ToString('dd/MM/yyyy')
     $infoText2 = "SRUM was created at $sruDBCreationDate`n"
     $infoText3 = "AMCache was created at $AMCacheCreationDate`n"
-    $infoText4 = "Event Log was created at $EventlogCreationDate`n"
+    $infoText4 = "Event Log was created at $EventlogCreationDate"
     $CreationDates = $infoText1 + $infoText2 + $infoText3 + $infoText4
     $CreationDates
     $lastClear = Get-PSDrive -PSProvider FileSystem | ForEach-Object { Get-ChildItem -Path (Join-Path -Path $_.Root -ChildPath '$Recycle.Bin') -Force -ErrorAction SilentlyContinue | Sort-Object LastWriteTime -Descending | Select-Object -First 1 | ForEach-Object { [PSCustomObject]@{ LastWriteTime = $_.LastWriteTime; PSDrive = $_.PSDrive.Name } } } | Sort-Object LastWriteTime -Descending | Select-Object -First 1; "Last Recycle Bin Clear: $($lastClear.LastWriteTime.ToString('dd/MM/yyyy HH:mm:ss')) on $($lastClear.PSDrive):\" 
@@ -426,12 +427,13 @@ $combine = Get-Content "C:\Temp\Dump\Processes\Combined.txt"
 
 Write-Host "   Checking for Manipulation"-ForegroundColor yellow
 $documentspath = [System.Environment]::GetFolderPath('MyDocuments')
-$settingsxml = Get-Content "$documentspath\Rockstar Games\GTA V\settings.xml"
+$settingsFilePath = "$documentspath\Rockstar Games\GTA V\settings.xml"
+$settingsxml = Get-Content $settingsFilePath
 $linesToCheck = $settingsxml[1..($settingsxml.Length - 1)]
 $minusLines = $linesToCheck | Where-Object { $_ -match "-" }
 $lodScaleLines = $linesToCheck | Where-Object { $_ -match '<LodScale' -and ([float]($_ -replace '.*value="([0-9.]+)".*', '$1')) -lt 1.0 }
 $minusResults = ($minusLines + $lodScaleLines) -join "`n"
-$settingslastModified = "Settings.xml last modified: $(Get-Item $settingsFilePath).LastWriteTime"
+$settingslastModified = "Settings.xml last modified: $((Get-Item $settingsFilePath).LastWriteTime.ToString('dd/MM/yyyy HH:mm:ss'))"
 
 $minusSettings = if ($minusResults) {
     "Minus-Settings found in settings.xml:"
