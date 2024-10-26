@@ -1,5 +1,5 @@
 # Checking Script
-# For safe and local quick-dumping of System logs and Files
+# For safe and local quick-dumping of System logs and files
 #
 # Author:
 # Created by dot-sys under GPL-3.0 license
@@ -10,7 +10,7 @@
 # Running PC Checking Programs, including this script, outside of PC Checks may have impact on the outcome.
 # It is advised not to use this on your own.
 #
-# Version 2.0 OPENBETA
+# Version 2.0 - OPENBETA
 # 26 - October - 2024
 
 $ErrorActionPreference = "SilentlyContinue" 
@@ -187,14 +187,15 @@ while ($jobs) {
 $processes = @()
 $processStartTimes = @()
 
-$processes += Start-Process -FilePath "powershell.exe" -ArgumentList "-File 'C:\temp\scripts\MFT.ps1'" -PassThru
+$processes += Start-Process -FilePath "powershell.exe" -ArgumentList "-File 'C:\temp\scripts\MFT.ps1'" -PassThru -WindowStyle Hidden
 $processStartTimes += Get-Date
-$processes += Start-Process -FilePath "powershell.exe" -ArgumentList "-File 'C:\temp\scripts\SystemLogs.ps1'" -PassThru
+$processes += Start-Process -FilePath "powershell.exe" -ArgumentList "-File 'C:\temp\scripts\SystemLogs.ps1'" -PassThru -WindowStyle Hidden
 $processStartTimes += Get-Date
-$processes += Start-Process -FilePath "powershell.exe" -ArgumentList "-File 'C:\temp\scripts\ProcDump.ps1'" -PassThru
+$processes += Start-Process -FilePath "powershell.exe" -ArgumentList "-File 'C:\temp\scripts\ProcDump.ps1'" -PassThru -WindowStyle Hidden
 $processStartTimes += Get-Date
-$processes += Start-Process -FilePath "powershell.exe" -ArgumentList "-File 'C:\temp\scripts\Registry.ps1'" -PassThru
+$processes += Start-Process -FilePath "powershell.exe" -ArgumentList "-File 'C:\temp\scripts\Registry.ps1'" -PassThru -WindowStyle Hidden
 $processStartTimes += Get-Date
+
 
 $filesToCheck = @(
     "C:\Temp\Dump\Events\Events.csv",
