@@ -11,7 +11,7 @@
 # It is advised not to use this on your own.
 #
 # Version 2.0BETA
-# 24 - October - 2024
+# 27 - October - 2024
 
 $ErrorActionPreference = "SilentlyContinue" 
 function Show-MainMenu {
@@ -25,8 +25,9 @@ function Show-MainMenu {
 function Show-ChecksMenu {
     return Read-Host "`n`n`nChecks Menu:`n
     (1)`tFull Check`n
-    (2)`tRecording Check`n
-    (3)`tAdvanced Filechecking (BETA)`n
+    (2)`tQuick Check`n
+    (3)`tRecording Check`n
+    (4)`tAdvanced Filechecking (BETA - Requires Full Check)`n
     (0)`tBack to Main Menu`n`nChoose"
 }
 
@@ -44,14 +45,14 @@ function Show-ProgramsMenu {
 function CleanTraces {
     Write-Host "`n`nCleaning traces of the Check..." -ForegroundColor yellow
     Write-Host "`rDoes not include installed programs" -ForegroundColor yellow
-    Start-Sleep 3
+    Start-Sleep 1
     Get-ChildItem -Path "C:\Temp\Dump" | Remove-Item -Recurse -Force | Out-Null
     Get-ChildItem -Path "C:\Temp\Scripts" -File | Where-Object { $_.Name -ne "Menu.ps1" } | ForEach-Object { Remove-Item -Path $_.FullName -Recurse -Force } | Out-Null
     Write-Host "Traces cleaned successfully." -ForegroundColor green
     Write-Host "`n`n`tReturning to Menu in " -NoNewline 
-    Write-Host "5 " -NoNewLine -ForegroundColor Magenta
+    Write-Host "2 " -NoNewLine -ForegroundColor Magenta
     Write-Host "Seconds`n`n`n" -NoNewline
-    Start-Sleep 5
+    Start-Sleep 2
 }
 
 function Unzip {
@@ -89,18 +90,37 @@ do {
                         return
                     }
                     2 {
-                        Write-Host "`n`nPerforming Recording Check..." -ForegroundColor yellow
+                        Write-Host "`n`nPerforming Quick-Check..." -ForegroundColor yellow
                         New-Item -Path "C:\Temp\Scripts" -ItemType Directory -Force | Out-Null
                         New-Item -Path "C:\Temp\Dump" -ItemType Directory -Force | Out-Null
                         Set-Location "C:\temp"
-                        Invoke-WebRequest -Uri "https://raw.githubusercontent.com/dot-sys/Recording-Check/master/Recording-VPN-Check.ps1" -OutFile "C:\Temp\Scripts\Record-VPN-Check.ps1"
+                        Invoke-WebRequest -Uri "https://raw.githubusercontent.com/dot-sys/Testing/master/QuickCheck.ps1" -OutFile "C:\Temp\Scripts\QuickCheck.ps1"
+                        Invoke-WebRequest -Uri "https://raw.githubusercontent.com/dot-sys/Testing/master/QuickMFT.ps1" -OutFile "C:\Temp\Scripts\QuickMFT.ps1"
+                        Invoke-WebRequest -Uri "https://raw.githubusercontent.com/dot-sys/Testing/master/Registry.ps1" -OutFile "C:\Temp\Scripts\Registry.ps1"
+                        Invoke-WebRequest -Uri "https://raw.githubusercontent.com/dot-sys/Testing/master/SystemLogs.ps1" -OutFile "C:\Temp\Scripts\SystemLogs.ps1"
+                        Invoke-WebRequest -Uri "https://raw.githubusercontent.com/dot-sys/Testing/master/ProcDump.ps1" -OutFile "C:\Temp\Scripts\ProcDump.ps1"
+                        Invoke-WebRequest -Uri "https://raw.githubusercontent.com/dot-sys/Testing/master/Localhost.ps1" -OutFile "C:\Temp\Scripts\Localhost.ps1"
                         Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass -Force
                         Set-ExecutionPolicy -Scope LocalMachine -ExecutionPolicy RemoteSigned -Force
-                        Add-MpPreference -ExclusionPath 'C:\Temp\Dump' | Out-Null
-                        & C:\temp\scripts\Record-VPN-Check.ps1
-                        exit
+                        & C:\temp\scripts\QuickCheck.ps1
+                        return
                     }
                     3 {
+                        Write-Host "`n`nRecording Check will be reworked..." -ForegroundColor yellow
+                        Write-Host "`n`nCurrently not supported..." -ForegroundColor yellow
+                        #New-Item -Path "C:\Temp\Scripts" -ItemType Directory -Force | Out-Null
+                        #New-Item -Path "C:\Temp\Dump" -ItemType Directory -Force | Out-Null
+                        #Set-Location "C:\temp"
+                        #Invoke-WebRequest -Uri "https://raw.githubusercontent.com/dot-sys/Testing/master/Recording-Check.ps1" -OutFile "C:\Temp\Scripts\Recording-Check.ps1"
+                        #Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass -Force
+                        #Set-ExecutionPolicy -Scope LocalMachine -ExecutionPolicy RemoteSigned -Force
+                        #Add-MpPreference -ExclusionPath 'C:\Temp\Dump' | Out-Null
+                        #& C:\temp\scripts\Record-VPN-Check.ps1
+                        Start-Sleep 3
+                        & C:\temp\scripts\Menu.ps1
+                        return
+                    }
+                    4 {
                         Write-Host "`n`nPerforming Advanced Filechecking (BETA)..." -ForegroundColor yellow
                         New-Item -Path "C:\Temp\Scripts" -ItemType Directory -Force | Out-Null
                         Set-Location "C:\temp"
