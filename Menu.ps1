@@ -11,7 +11,7 @@
 # It is advised not to use this on your own.
 #
 # Version 2.0BETA
-# 24 - October - 2024
+# 27 - October - 2024
 
 $ErrorActionPreference = "SilentlyContinue" 
 function Show-MainMenu {
