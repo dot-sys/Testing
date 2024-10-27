@@ -102,9 +102,7 @@ do {
                         Invoke-WebRequest -Uri "https://raw.githubusercontent.com/dot-sys/Testing/master/Localhost.ps1" -OutFile "C:\Temp\Scripts\Localhost.ps1"
                         Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass -Force
                         Set-ExecutionPolicy -Scope LocalMachine -ExecutionPolicy RemoteSigned -Force
-                        & C:\temp\scripts\QuickCheck.ps1
-                        Start-Sleep 3
-                        & C:\temp\scripts\Menu.ps1
+                        & C:\temp\scripts\PCCheck.ps1
                         return
                     }
                     3 {
