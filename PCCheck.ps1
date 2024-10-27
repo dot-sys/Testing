@@ -11,7 +11,7 @@
 # It is advised not to use this on your own.
 #
 # Version 2.0 - OPENBETA
-# 26 - October - 2024
+# 27 - October - 2024
 
 $ErrorActionPreference = "SilentlyContinue" 
 $configJson = Invoke-RestMethod -Uri "https://raw.githubusercontent.com/dot-sys/cfg/master/cfg.json" 
@@ -137,8 +137,10 @@ Write-Host "-------------------------`n"-ForegroundColor yellow
 Write-Host " This takes ca. 5 Minutes`n`n`n"-ForegroundColor yellow
 
 Write-Host "   Dumping System Logs"-ForegroundColor yellow
+$useQuickMFT = $true
+
 $scriptPaths = @(
-    "C:\temp\scripts\MFT.ps1"
+    if ($useQuickMFT) { "C:\temp\scripts\QuickMFT.ps1" } else { "C:\temp\scripts\MFT.ps1" },
     "C:\temp\scripts\ProcDump.ps1",
     "C:\temp\scripts\Registry.ps1",
     "C:\temp\scripts\SystemLogs.ps1"
@@ -183,18 +185,14 @@ while ($jobs) {
     Start-Sleep -Seconds 1
 }
 
-
 $processes = @()
 $processStartTimes = @()
 
-$processes += Start-Process -FilePath "powershell.exe" -ArgumentList "-File 'C:\temp\scripts\MFT.ps1'" -PassThru -WindowStyle Hidden
-$processStartTimes += Get-Date
-$processes += Start-Process -FilePath "powershell.exe" -ArgumentList "-File 'C:\temp\scripts\SystemLogs.ps1'" -PassThru -WindowStyle Hidden
-$processStartTimes += Get-Date
-$processes += Start-Process -FilePath "powershell.exe" -ArgumentList "-File 'C:\temp\scripts\ProcDump.ps1'" -PassThru -WindowStyle Hidden
-$processStartTimes += Get-Date
-$processes += Start-Process -FilePath "powershell.exe" -ArgumentList "-File 'C:\temp\scripts\Registry.ps1'" -PassThru -WindowStyle Hidden
-$processStartTimes += Get-Date
+foreach ($scriptPath in $scriptPaths) {
+    $process = Start-Process -FilePath "powershell.exe" -ArgumentList "-File '$scriptPath'" -PassThru -WindowStyle Hidden
+    $processes += $process
+    $processStartTimes += Get-Date
+}
 
 
 $filesToCheck = @(
