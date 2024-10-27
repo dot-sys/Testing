@@ -11,7 +11,7 @@
 # It is advised not to use this on your own.
 #
 # Version 2.0BETA
-# 27 - October - 2024
+# 24 - October - 2024
 
 $ErrorActionPreference = "SilentlyContinue" 
 function Show-MainMenu {
@@ -90,19 +90,22 @@ do {
                         return
                     }
                     2 {
-                        Write-Host "`n`nPerforming Quick-Check..." -ForegroundColor yellow
-                        New-Item -Path "C:\Temp\Scripts" -ItemType Directory -Force | Out-Null
-                        New-Item -Path "C:\Temp\Dump" -ItemType Directory -Force | Out-Null
-                        Set-Location "C:\temp"
-                        Invoke-WebRequest -Uri "https://raw.githubusercontent.com/dot-sys/Testing/master/QuickCheck.ps1" -OutFile "C:\Temp\Scripts\QuickCheck.ps1"
-                        Invoke-WebRequest -Uri "https://raw.githubusercontent.com/dot-sys/Testing/master/QuickMFT.ps1" -OutFile "C:\Temp\Scripts\QuickMFT.ps1"
-                        Invoke-WebRequest -Uri "https://raw.githubusercontent.com/dot-sys/Testing/master/Registry.ps1" -OutFile "C:\Temp\Scripts\Registry.ps1"
-                        Invoke-WebRequest -Uri "https://raw.githubusercontent.com/dot-sys/Testing/master/SystemLogs.ps1" -OutFile "C:\Temp\Scripts\SystemLogs.ps1"
-                        Invoke-WebRequest -Uri "https://raw.githubusercontent.com/dot-sys/Testing/master/ProcDump.ps1" -OutFile "C:\Temp\Scripts\ProcDump.ps1"
-                        Invoke-WebRequest -Uri "https://raw.githubusercontent.com/dot-sys/Testing/master/Localhost.ps1" -OutFile "C:\Temp\Scripts\Localhost.ps1"
-                        Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass -Force
-                        Set-ExecutionPolicy -Scope LocalMachine -ExecutionPolicy RemoteSigned -Force
-                        & C:\temp\scripts\QuickCheck.ps1
+                        Write-Host "`n`nQuick Check will be reworked..." -ForegroundColor yellow
+                        Write-Host "`n`nCurrently not supported..." -ForegroundColor yellow
+                        #New-Item -Path "C:\Temp\Scripts" -ItemType Directory -Force | Out-Null
+                        #New-Item -Path "C:\Temp\Dump" -ItemType Directory -Force | Out-Null
+                        #Set-Location "C:\temp"
+                        #Invoke-WebRequest -Uri "https://raw.githubusercontent.com/dot-sys/Testing/master/QuickCheck.ps1" -OutFile "C:\Temp\Scripts\QuickCheck.ps1"
+                        #Invoke-WebRequest -Uri "https://raw.githubusercontent.com/dot-sys/Testing/master/QuickMFT.ps1" -OutFile "C:\Temp\Scripts\QuickMFT.ps1"
+                        #Invoke-WebRequest -Uri "https://raw.githubusercontent.com/dot-sys/Testing/master/Registry.ps1" -OutFile "C:\Temp\Scripts\Registry.ps1"
+                        #Invoke-WebRequest -Uri "https://raw.githubusercontent.com/dot-sys/Testing/master/SystemLogs.ps1" -OutFile "C:\Temp\Scripts\SystemLogs.ps1"
+                        #Invoke-WebRequest -Uri "https://raw.githubusercontent.com/dot-sys/Testing/master/ProcDump.ps1" -OutFile "C:\Temp\Scripts\ProcDump.ps1"
+                        #Invoke-WebRequest -Uri "https://raw.githubusercontent.com/dot-sys/Testing/master/Localhost.ps1" -OutFile "C:\Temp\Scripts\Localhost.ps1"
+                        #Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass -Force
+                        #Set-ExecutionPolicy -Scope LocalMachine -ExecutionPolicy RemoteSigned -Force
+                        #& C:\temp\scripts\QuickCheck.ps1
+                        Start-Sleep 3
+                        & C:\temp\scripts\Menu.ps1
                         return
                     }
                     3 {
